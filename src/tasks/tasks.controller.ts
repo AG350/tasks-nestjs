@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Patch, Post, Query, UseGuards, UsePipes, ValidationPipe } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { GetUser } from 'src/auth/get-user.decorator';
 import { User } from 'src/auth/user.entity';
@@ -13,6 +13,7 @@ import { TasksService } from './tasks.service';
 @Controller('tasks')
 @UseGuards(AuthGuard())
 export class TasksController {
+    private logger = new Logger('TasksController');
     constructor(private tasksService: TasksService) {}
 
     @Get()
@@ -20,7 +21,8 @@ export class TasksController {
         @Query(ValidationPipe) filterDto: GetTaskFilterDto,
         @GetUser() user: User,
     ): Promise<Task[]> {
-       return this.tasksService.getTasks(filterDto, user);
+        this.logger.verbose(`User '${user.username}' retrieving all tasks. Filters: ${JSON.stringify(filterDto)}`);
+        return this.tasksService.getTasks(filterDto, user);
     }
 
     @Post()
@@ -29,14 +31,16 @@ export class TasksController {
         @Body() createTaskDto: CreateTaskDto,
         @GetUser() user: User,
     ): Promise<Task> {
-       return this.tasksService.createTask(createTaskDto, user) 
+        this.logger.verbose(`User '${user.username}' created a tasks. Data: ${JSON.stringify(createTaskDto)}`);
+        return this.tasksService.createTask(createTaskDto, user);
     }
 
     @Get('/:id')
     getTaskById(
         @Param('id', ParseIntPipe) id: number,
         @GetUser() user: User,
-    ): Promise<Task> {   
+    ): Promise<Task> {  
+        this.logger.verbose(`User '${user.username}' looking for a tasks. Task ID: ${JSON.stringify(id)}`); 
         return this.tasksService.getTaskById(id, user)
     }
 
@@ -45,6 +49,7 @@ export class TasksController {
         @Param('id', ParseIntPipe,) id: number,
         @GetUser() user: User,
     ): Promise<DeleteResult> {
+        this.logger.verbose(`User '${user.username}' deleted a tasks. Task ID: ${JSON.stringify(id)}`);
         return this.tasksService.deleteTaskById(id, user)
     }
 
@@ -54,6 +59,7 @@ export class TasksController {
         @Body('status', TaskStatusValidationPipe) status: TaskStatus,
         @GetUser() user: User,
     ): Promise<Task> {
+        this.logger.verbose(`User '${user.username}' updated task's status. Task ID: ${JSON.stringify(id)}, new status: ${status}`);
         return this.tasksService.updateTaskStatus(id,status, user);
     }
 
