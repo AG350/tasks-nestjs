@@ -2,6 +2,7 @@ import { NotFoundException } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { GetTaskFilterDto } from './dto/get-task-filter.dto';
 import { TaskStatus } from './task-status.enum';
+import { Task } from './task.entity';
 import { TaskRepository } from './task.repository';
 import { TasksService } from './tasks.service';
 
@@ -12,6 +13,7 @@ const mockTaskRepository = () => ({
     findOne: jest.fn(),
     createTask: jest.fn(),
     delete: jest.fn(),
+    getTaskById: jest.fn(),
 });
 
 describe('TaskService', () => {
@@ -90,4 +92,23 @@ describe('TaskService', () => {
             expect( tasksService.deleteTaskById(1, mockUser)).rejects.toThrow(NotFoundException);
         })
     });
+
+    describe('updateTaskStatus', () => {
+        it('Calls taskRepository.save() to update the status', async () => {
+            const save = jest.fn().mockResolvedValue(true);
+
+            tasksService.getTaskById = jest.fn().mockResolvedValue({
+                status: TaskStatus.OPEN,
+                save,
+            });
+
+            expect(tasksService.getTaskById).not.toHaveBeenCalled();
+            expect(save).not.toHaveBeenCalled();
+            const result = await tasksService.updateTaskStatus(1, TaskStatus.IN_PROGRESS, mockUser);
+            expect(tasksService.getTaskById).toHaveBeenCalled();
+            expect(save).toHaveBeenCalled();
+            expect(result.status).toEqual(TaskStatus.IN_PROGRESS)
+        });
+    });
+    
 });
